@@ -1,10 +1,11 @@
 package io.metersphere.api.dto.definition.request.controller;
 
 import com.alibaba.fastjson.annotation.JSONType;
+import io.metersphere.api.dto.definition.request.ElementUtil;
 import io.metersphere.api.dto.definition.request.ParameterConfig;
+import io.metersphere.commons.constants.DelimiterConstants;
 import io.metersphere.plugin.core.MsParameter;
 import io.metersphere.plugin.core.MsTestElement;
-import io.metersphere.commons.constants.DelimiterConstants;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.collections.CollectionUtils;
@@ -36,7 +37,7 @@ public class MsTransactionController extends MsTestElement {
         }
 
         TransactionController transactionController = transactionController();
-        String name = this.getParentName(this.getParent());
+        String name = ElementUtil.getParentName(this.getParent());
         if (StringUtils.isNotEmpty(name) && !config.isOperating()) {
             transactionController.setName(this.getName() + DelimiterConstants.SEPARATOR.toString() + name);
         }
