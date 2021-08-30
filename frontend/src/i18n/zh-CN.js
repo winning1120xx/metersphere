@@ -179,6 +179,7 @@ export default {
     testing: "测试中",
     environment: "运行环境",
     run_success: "执行成功",
+    run_completed: "执行完成",
     run_fail: "执行失败",
     table: {
       select_tip: "已选中 {0} 条数据"
@@ -386,6 +387,7 @@ export default {
       defect_task_notification: '缺陷任务通知',
       select_receiving_method: '选择接收方式',
       mail: '邮件',
+      in_site: '站内通知',
       nail_robot: '钉钉机器人',
       enterprise_wechat_robot: '企业微信机器人',
       lark: '飞书机器人',
@@ -1002,6 +1004,8 @@ export default {
       database_config: "数据库配置",
       tcp_config: "TCP配置",
       import: "导入环境",
+      request_timeout: "链接超时",
+      response_timeout: "响应超时",
     },
     scenario: {
       scenario: "场景",
@@ -1483,6 +1487,7 @@ export default {
       import: {
         import: "导入用例",
         case_import: "导入测试用例",
+        case_export: "导出测试用例",
         download_template: "下载模版",
         click_upload: "点击上传",
         upload_limit: "只能上传xls/xlsx文件，且不超过100M",

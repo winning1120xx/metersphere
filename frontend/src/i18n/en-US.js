@@ -178,6 +178,7 @@ export default {
     testing: "Testing",
     environment: "Environment",
     run_success: "Run Success",
+    run_completed: "Run Completed",
     run_fail: "Run Fail",
     table: {
       select_tip: "Item {0} data is selected"
@@ -805,7 +806,7 @@ export default {
         select_case: "Search use cases",
         select_api: "Search api",
         case: "Case",
-        responsible: "Responsible",
+        responsible: "Executor",
         title: "Create api",
         path_info: "Please enter the URL of the interface, such as /api/demo/#{id}, where id is the path parameter",
         path_all_info: "Please enter the complete test address",
@@ -917,7 +918,7 @@ export default {
       save_as_api: "Save as api",
       delete_step: "Delete step",
       reference_deleted_info: "Reference scene has been deleted",
-      follow_people: "Follow people",
+      follow_people: "Follow",
       create_tag: "Create tag",
       scenario_step: "Ccenario step",
       step_total: "Step total",
@@ -998,6 +999,8 @@ export default {
       database_config: "Database Config",
       tcp_config: "TCP Config",
       import: "Import Environment",
+      request_timeout: "Request Timeout",
+      response_timeout: "Response Timeout",
     },
     scenario: {
       scenario: "Scenario",
@@ -1474,6 +1477,7 @@ export default {
       import: {
         import: "Import test case",
         case_import: "Import test case",
+        case_export: "Export test case",
         download_template: "Download template",
         click_upload: "Upload",
         upload_limit: "Only XLS/XLSX/XMIND files can be uploaded, and no more than 100M",

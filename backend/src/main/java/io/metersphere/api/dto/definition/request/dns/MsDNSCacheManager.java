@@ -41,7 +41,9 @@ public class MsDNSCacheManager extends MsTestElement {
 
     public static void addEnvironmentVariables(HashTree samplerHashTree, String name, EnvironmentConfig config) {
         name += "Environment Variables";
-        samplerHashTree.add(arguments(name, config.getCommonConfig().getVariables()));
+        if (CollectionUtils.isNotEmpty(config.getCommonConfig().getVariables())) {
+            samplerHashTree.add(arguments(name, config.getCommonConfig().getVariables()));
+        }
     }
 
     public static void addEnvironmentDNS(HashTree samplerHashTree, String name, EnvironmentConfig config, HttpConfig httpConfig) {
@@ -57,7 +59,9 @@ public class MsDNSCacheManager extends MsTestElement {
                     }
                 }
             });
-            samplerHashTree.add(dnsCacheManager(name + " DNSCacheManager", hosts));
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                samplerHashTree.add(dnsCacheManager(name + " DNSCacheManager", hosts));
+            }
         }
     }
 
@@ -81,6 +85,7 @@ public class MsDNSCacheManager extends MsTestElement {
         dnsCacheManager.setProperty(TestElement.GUI_CLASS, SaveService.aliasToClass("DNSCachePanel"));
         dnsCacheManager.setCustomResolver(true);
         hosts.forEach(host -> dnsCacheManager.addHost(host.getDomain(), host.getIp()));
+        hosts.forEach(host -> dnsCacheManager.addServer(host.getIp()));
 
         return dnsCacheManager;
     }

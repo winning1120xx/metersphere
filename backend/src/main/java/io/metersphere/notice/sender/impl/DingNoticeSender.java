@@ -6,19 +6,22 @@ import com.dingtalk.api.request.OapiRobotSendRequest;
 import com.taobao.api.ApiException;
 import io.metersphere.commons.utils.LogUtil;
 import io.metersphere.notice.domain.MessageDetail;
+import io.metersphere.notice.domain.Receiver;
+import io.metersphere.notice.domain.UserDetail;
 import io.metersphere.notice.sender.AbstractNoticeSender;
 import io.metersphere.notice.sender.NoticeModel;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class DingNoticeSender extends AbstractNoticeSender {
 
     public void sendNailRobot(MessageDetail messageDetail, NoticeModel noticeModel, String context) {
-        List<String> userIds = messageDetail.getUserIds();
-        if (CollectionUtils.isEmpty(userIds)) {
+        List<Receiver> receivers = noticeModel.getReceivers();
+        if (CollectionUtils.isEmpty(receivers)) {
             return;
         }
         DingTalkClient client = new DefaultDingTalkClient(messageDetail.getWebhook());
@@ -28,8 +31,21 @@ public class DingNoticeSender extends AbstractNoticeSender {
         text.setContent(context);
         request.setText(text);
         OapiRobotSendRequest.At at = new OapiRobotSendRequest.At();
-        List<String> phoneList = super.getUserPhones(noticeModel, userIds);
-        LogUtil.info("收件人地址: " + phoneList);
+
+        List<String> userIds = receivers.stream()
+                .map(Receiver::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<String> phoneList = super.getUserDetails(userIds).stream()
+                .map(UserDetail::getPhone)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(phoneList)) {
+            return;
+        }
+        LogUtil.info("钉钉收件人地址: {}", userIds);
         at.setAtMobiles(phoneList);
         request.setAt(at);
         try {

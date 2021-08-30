@@ -1,5 +1,5 @@
 <template>
-  <el-card style="margin-top: 5px" @click.native="selectTestCase(apiCase,$event)">
+  <el-card style="margin-top: 5px" @click.native="selectTestCase(apiCase,$event)" v-loading="saveLoading">
     <div @click="active(apiCase)" v-if="type!=='detail'">
       <el-row>
         <el-col :span="3">
@@ -27,7 +27,10 @@
                       class="ms-api-header-select" style="width: 180px"
                       @blur="saveTestCase(apiCase,true)" :placeholder="$t('commons.input_name')" ref="nameEdit"/>
             <span v-else>
-                <span>{{ apiCase.id ? apiCase.name : '' }}</span>
+              <el-tooltip :content="apiCase.id ? apiCase.name : ''" placement="top">
+                <span>{{ apiCase.id ? apiCase.name : '' | ellipsis }}</span>
+              </el-tooltip>
+
               <i class="el-icon-edit" style="cursor:pointer" @click="showInput(apiCase)"/>
             </span>
 
@@ -66,12 +69,12 @@
             <el-select v-model="apiCase.followPeople"
                        clearable
                        :placeholder="$t('api_test.automation.follow_people')" filterable size="small"
-                       @change="saveTestCase(apiCase)">
+                       @change="saveTestCase(apiCase,true)">
               <el-option
-                  v-for="item in maintainerOptions"
-                  :key="item.id"
-                  :label="item.id + ' (' + item.name + ')'"
-                  :value="item.id">
+                v-for="item in maintainerOptions"
+                :key="item.id"
+                :label="item.id + ' (' + item.name + ')'"
+                :value="item.id">
               </el-option>
             </el-select>
           </div>
@@ -82,7 +85,7 @@
             <ms-tip-button @click="singleRun(apiCase)" :tip="$t('api_test.run')" icon="el-icon-video-play"
                            class="run-button" size="mini" :disabled="!apiCase.id" circle v-if="!loading"/>
             <el-tooltip :content="$t('report.stop_btn')" placement="top" :enterable="false" v-else>
-              <el-button :disabled="!apiCase.id" @click.once="stop" size="mini" style="color:white;padding: 0;width: 28px;height: 28px;" class="stop-btn" circle>
+              <el-button :disabled="!apiCase.id" @click.once="stop(apiCase)" size="mini" style="color:white;padding: 0;width: 28px;height: 28px;" class="stop-btn" circle>
                 <div style="transform: scale(0.72)">
                   <span style="margin-left: -3.5px;font-weight: bold">STOP</span>
                 </div>
@@ -176,6 +179,17 @@ import MsChangeHistory from "../../../../history/ChangeHistory";
 
 export default {
   name: "ApiCaseItem",
+  filters: {
+    ellipsis (value) {
+      if (!value) {
+        return '';
+      }
+      if (value.length > 20) {
+        return value.slice(0,20) + '...'
+      }
+      return value
+    }
+  },
   components: {
     ApiResponseComponent,
     MsInputTag,
@@ -220,7 +234,7 @@ export default {
         {name: this.$t('test_track.case.batch_edit_case'), handleClick: this.handleEditBatch}
       ],
       methodColorMap: new Map(API_METHOD_COLOUR),
-      maintainerOptions: [],
+      saveLoading: false,
     }
   },
   props: {
@@ -252,13 +266,13 @@ export default {
       default() {
         return false;
       }
-    }
+    },
+    maintainerOptions: Array,
   },
   created() {
     if (requireComponent != null && JSON.stringify(esbDefinition) != '{}' && JSON.stringify(esbDefinitionResponse) != '{}') {
       this.showXpackCompnent = true;
     }
-    this.getMaintainerOptions();
   },
   watch: {
     'apiCase.selected'() {
@@ -266,11 +280,6 @@ export default {
     }
   },
   methods: {
-    getMaintainerOptions() {
-      this.$post('/user/project/member/tester/list', {projectId: getCurrentProjectID()}, response => {
-        this.maintainerOptions = response.data;
-      });
-    },
     openHis(row) {
       this.$refs.changeHistory.open(row.id);
     },
@@ -290,7 +299,7 @@ export default {
         confirmButtonText: this.$t('commons.confirm'),
         callback: (action) => {
           if (action === 'confirm') {
-            this.$get('/api/testcase/delete/' + row.id, () => {
+            this.$get('/api/testcase/deleteToGc/' + row.id, () => {
               this.$success(this.$t('commons.delete_success'));
               this.$emit('refresh');
             });
@@ -308,8 +317,8 @@ export default {
       this.saveTestCase(data);
       this.$emit('singleRun', data);
     },
-    stop() {
-      this.$emit('stop');
+    stop(data) {
+      this.$emit('stop', data.id);
     },
     copyCase(data) {
       if (data && data.request) {
@@ -372,6 +381,12 @@ export default {
         }
       });
     },
+    reload() {
+      this.saveLoading = true
+      this.$nextTick(() => {
+        this.saveLoading = false
+      });
+    },
     saveCase(row, hideAlert) {
       let tmp = JSON.parse(JSON.stringify(row));
       this.isShowInput = false;
@@ -411,8 +426,13 @@ export default {
         row.updateTime = data.updateTime;
         if (!row.message) {
           this.$success(this.$t('commons.save_success'));
+          this.reload();
           if (!hideAlert) {
             this.$emit('refresh');
+          }
+          // 刷新编辑后用例列表
+          if (this.api.source === "editCase") {
+            this.$store.state.currentApiCase = {refresh: "true"};
           }
         }
       });

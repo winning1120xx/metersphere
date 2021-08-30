@@ -194,8 +194,7 @@ public class ApiTestCaseService {
     }
 
     public ApiTestCase create(SaveApiTestCaseRequest request, List<MultipartFile> bodyFiles) {
-        ApiTestCase test = createTest(request);
-        FileUtils.createBodyFiles(request.getId(), bodyFiles);
+        ApiTestCase test = createTest(request, bodyFiles);
         return test;
     }
 
@@ -311,19 +310,22 @@ public class ApiTestCaseService {
             test.setTags(request.getTags());
         }
         apiTestCaseMapper.updateByPrimaryKeySelective(test);
-        return test;
+        return apiTestCaseMapper.selectByPrimaryKey(request.getId());
     }
 
-    private ApiTestCase createTest(SaveApiTestCaseRequest request) {
+    private ApiTestCase createTest(SaveApiTestCaseRequest request, List<MultipartFile> bodyFiles) {
         checkNameExist(request);
+        FileUtils.createBodyFiles(request.getId(), bodyFiles);
 
         if (StringUtils.isNotEmpty(request.getEsbDataStruct()) || StringUtils.isNotEmpty(request.getBackEsbDataStruct())) {
             request = esbApiParamService.handleEsbRequest(request);
         }
+        FileUtils.copyBdyFile(request.getApiDefinitionId(), request.getId());
 
         final ApiTestCaseWithBLOBs test = new ApiTestCaseWithBLOBs();
         test.setId(request.getId());
         test.setName(request.getName());
+        test.setStatus("");
         test.setApiDefinitionId(request.getApiDefinitionId());
         test.setCreateUserId(Objects.requireNonNull(SessionUtils.getUser()).getId());
         test.setUpdateUserId(Objects.requireNonNull(SessionUtils.getUser()).getId());
@@ -340,8 +342,12 @@ public class ApiTestCaseService {
         } else {
             test.setTags(request.getTags());
         }
-        FileUtils.copyBdyFile(request.getApiDefinitionId(), request.getId());
-        apiTestCaseMapper.insert(test);
+        ApiTestCaseWithBLOBs apiTestCaseWithBLOBs = apiTestCaseMapper.selectByPrimaryKey(test.getId());
+        if (apiTestCaseWithBLOBs != null) {
+            apiTestCaseMapper.updateByPrimaryKey(apiTestCaseWithBLOBs);
+        } else {
+            apiTestCaseMapper.insert(test);
+        }
         return test;
     }
 
@@ -523,7 +529,7 @@ public class ApiTestCaseService {
     public void deleteBatchByParam(ApiTestBatchRequest request) {
         List<String> ids = request.getIds();
         if (request.isSelectAll()) {
-            ids = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), null);
+            ids = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), null, request.getCombine());
         }
         this.deleteBatch(ids);
     }
@@ -531,7 +537,7 @@ public class ApiTestCaseService {
     public void editApiBathByParam(ApiTestBatchRequest request) {
         List<String> ids = request.getIds();
         if (request.isSelectAll()) {
-            ids = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), null);
+            ids = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), null, request.getCombine());
         }
         ApiTestCaseExample apiDefinitionExample = new ApiTestCaseExample();
         apiDefinitionExample.createCriteria().andIdIn(ids);
@@ -596,7 +602,7 @@ public class ApiTestCaseService {
         }
     }
 
-    private List<String> getAllApiCaseIdsByFontedSelect(Map<String, List<String>> filters, List<String> moduleIds, String name, String projectId, String protocol, List<String> unSelectIds, String status, String apiId) {
+    private List<String> getAllApiCaseIdsByFontedSelect(Map<String, List<String>> filters, List<String> moduleIds, String name, String projectId, String protocol, List<String> unSelectIds, String status, String apiId, Map<String, Object> combine) {
         ApiTestCaseRequest selectRequest = new ApiTestCaseRequest();
         selectRequest.setFilters(filters);
         selectRequest.setModuleIds(moduleIds);
@@ -606,22 +612,21 @@ public class ApiTestCaseService {
         selectRequest.setStatus(status);
         selectRequest.setWorkspaceId(SessionUtils.getCurrentWorkspaceId());
         selectRequest.setApiDefinitionId(apiId);
+        if (combine != null) {
+            selectRequest.setCombine(combine);
+        }
         List<ApiTestCaseDTO> list = extApiTestCaseMapper.listSimple(selectRequest);
         List<String> allIds = list.stream().map(ApiTestCaseDTO::getId).collect(Collectors.toList());
         List<String> ids = allIds.stream().filter(id -> !unSelectIds.contains(id)).collect(Collectors.toList());
         return ids;
     }
 
-    private ApiDefinitionExecResult addResult(String id, String status, ApiDefinitionExecResultMapper batchMapper) {
+    private ApiDefinitionExecResult addResult(String id, String status) {
         ApiDefinitionExecResult apiResult = new ApiDefinitionExecResult();
         apiResult.setId(UUID.randomUUID().toString());
         apiResult.setCreateTime(System.currentTimeMillis());
         apiResult.setStartTime(System.currentTimeMillis());
         apiResult.setEndTime(System.currentTimeMillis());
-        ApiTestCaseWithBLOBs caseWithBLOBs = apiTestCaseMapper.selectByPrimaryKey(id);
-        if (caseWithBLOBs != null) {
-            apiResult.setName(caseWithBLOBs.getName());
-        }
         apiResult.setTriggerMode(TriggerMode.BATCH.name());
         apiResult.setActuator("LOCAL");
         apiResult.setUserId(Objects.requireNonNull(SessionUtils.getUser()).getId());
@@ -629,11 +634,6 @@ public class ApiTestCaseService {
         apiResult.setStartTime(System.currentTimeMillis());
         apiResult.setType(ApiRunMode.DEFINITION.name());
         apiResult.setStatus(status);
-        batchMapper.insert(apiResult);
-        caseWithBLOBs.setLastResultId(apiResult.getId());
-        caseWithBLOBs.setUpdateTime(System.currentTimeMillis());
-        caseWithBLOBs.setStatus(APITestStatus.Running.name());
-        apiTestCaseMapper.updateByPrimaryKey(caseWithBLOBs);
         return apiResult;
     }
 
@@ -643,10 +643,20 @@ public class ApiTestCaseService {
         Map<String, ApiDefinitionExecResult> executeQueue = new HashMap<>();
         SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
         ApiDefinitionExecResultMapper batchMapper = sqlSession.getMapper(ApiDefinitionExecResultMapper.class);
-        request.getIds().forEach(testCaseId -> {
-            ApiDefinitionExecResult report = addResult(testCaseId, APITestStatus.Running.name(), batchMapper);
+
+        for (String testCaseId : request.getIds()) {
+            ApiDefinitionExecResult report = addResult(testCaseId, APITestStatus.Running.name());
+            ApiTestCaseWithBLOBs caseWithBLOBs = apiTestCaseMapper.selectByPrimaryKey(testCaseId);
+            if (caseWithBLOBs != null) {
+                report.setName(caseWithBLOBs.getName());
+                caseWithBLOBs.setLastResultId(report.getId());
+                caseWithBLOBs.setUpdateTime(System.currentTimeMillis());
+                caseWithBLOBs.setStatus(APITestStatus.Running.name());
+                apiTestCaseMapper.updateByPrimaryKey(caseWithBLOBs);
+            }
+            batchMapper.insert(report);
             executeQueue.put(testCaseId, report);
-        });
+        }
         sqlSession.flushStatements();
         for (String caseId : executeQueue.keySet()) {
             RunCaseRequest runCaseRequest = new RunCaseRequest();
@@ -860,7 +870,7 @@ public class ApiTestCaseService {
     public void deleteToGcByParam(ApiTestBatchRequest request) {
         List<String> ids = request.getIds();
         if (request.isSelectAll()) {
-            ids = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), request.getApiDefinitionId());
+            ids = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), request.getApiDefinitionId(), request.getCombine());
         }
         this.deleteToGc(ids);
     }
@@ -868,7 +878,7 @@ public class ApiTestCaseService {
     public List<String> reduction(ApiTestBatchRequest request) {
         List<String> ids = request.getIds();
         if (request.isSelectAll()) {
-            ids = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), null);
+            ids = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), null, request.getCombine());
         }
 
         List<String> cannotReductionAPiName = new ArrayList<>();
@@ -884,7 +894,6 @@ public class ApiTestCaseService {
             cannotReductionApiCaseList.stream().map(ApiTestCaseDTO::getId).collect(Collectors.toList());
             List<String> deleteIds = ids.stream().filter(id -> !cannotReductionCaseId.contains(id)).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(deleteIds)) {
-                extApiTestCaseMapper.checkOriginalStatusByIds(deleteIds);
                 extApiTestCaseMapper.reduction(deleteIds);
             }
         }
@@ -902,7 +911,7 @@ public class ApiTestCaseService {
     public DeleteCheckResult checkDeleteDatas(ApiTestBatchRequest request) {
         List<String> deleteIds = request.getIds();
         if (request.isSelectAll()) {
-            deleteIds = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), request.getApiDefinitionId());
+            deleteIds = this.getAllApiCaseIdsByFontedSelect(request.getFilters(), request.getModuleIds(), request.getName(), request.getProjectId(), request.getProtocol(), request.getUnSelectIds(), request.getStatus(), request.getApiDefinitionId(), request.getCombine());
         }
         DeleteCheckResult result = new DeleteCheckResult();
         List<String> checkMsgList = new ArrayList<>();

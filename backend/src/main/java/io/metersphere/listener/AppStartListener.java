@@ -9,6 +9,7 @@ import io.metersphere.commons.utils.RunInterface;
 import io.metersphere.performance.service.PerformanceTestService;
 import io.metersphere.service.JarConfigService;
 import io.metersphere.service.PluginService;
+import io.metersphere.service.ProjectService;
 import io.metersphere.service.ScheduleService;
 import io.metersphere.service.SystemParameterService;
 import io.metersphere.track.service.IssuesService;
@@ -39,6 +40,8 @@ public class AppStartListener implements ApplicationListener<ApplicationReadyEve
     @Resource
     private IssuesService issuesService;
     @Resource
+    private ProjectService projectService;
+    @Resource
     private PerformanceTestService performanceTestService;
     @Resource
     private PluginService pluginService;
@@ -57,8 +60,17 @@ public class AppStartListener implements ApplicationListener<ApplicationReadyEve
 
         initPythonEnv();
 
+        try {
+            //检查状态为开启的TCP-Mock服务端口
+            projectService.initMockTcpService();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+
         initOperate(apiAutomationService::checkApiScenarioUseUrl, "init.scenario.url");
         initOperate(apiAutomationService::checkApiScenarioReferenceId, "init.scenario.referenceId");
+        initOperate(apiAutomationService::initExecuteTimes, "init.scenario.executeTimes");
         initOperate(issuesService::syncThirdPartyIssues, "init.issue");
         initOperate(issuesService::issuesCount, "init.issueCount");
         initOperate(performanceTestService::initScenarioLoadTest, "init.scenario.load.test");
@@ -70,6 +82,7 @@ public class AppStartListener implements ApplicationListener<ApplicationReadyEve
         }
 
         scheduleService.startEnableSchedules();
+
     }
 
 

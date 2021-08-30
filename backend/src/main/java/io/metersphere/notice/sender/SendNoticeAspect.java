@@ -141,6 +141,8 @@ public class SendNoticeAspect {
                     .mailTemplate(sendNotice.mailTemplate())
                     .paramMap(paramMap)
                     .event(sendNotice.event())
+                    .status((String) paramMap.get("status"))
+                    .excludeSelf(true)
                     .build();
             noticeSendService.send(sendNotice.taskType(), noticeModel);
         }
@@ -159,25 +161,25 @@ public class SendNoticeAspect {
         String operation = "";
         switch (sendNotice.event()) {
             case NoticeConstants.Event.CREATE:
+            case NoticeConstants.Event.CASE_CREATE:
                 operation = "创建了";
                 break;
             case NoticeConstants.Event.UPDATE:
+            case NoticeConstants.Event.CASE_UPDATE:
                 operation = "更新了";
                 break;
             case NoticeConstants.Event.DELETE:
+            case NoticeConstants.Event.CASE_DELETE:
                 operation = "删除了";
                 break;
             case NoticeConstants.Event.COMMENT:
                 operation = "评论了";
                 break;
+            case NoticeConstants.Event.COMPLETE:
+                operation = "完成了";
+                break;
             case NoticeConstants.Event.CLOSE_SCHEDULE:
                 operation = "关闭了定时任务";
-                break;
-            case NoticeConstants.Event.CASE_CREATE:
-                operation = "创建了接口用例";
-                break;
-            case NoticeConstants.Event.CASE_UPDATE:
-                operation = "更新了接口用例";
                 break;
             default:
                 break;

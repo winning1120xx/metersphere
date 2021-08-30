@@ -33,7 +33,12 @@ public class TestPlanScenarioCaseController {
 
     @GetMapping("/list/failure/{planId}")
     public List<TestPlanFailureScenarioDTO> getFailureList(@PathVariable String planId) {
-        return testPlanScenarioCaseService.getFailureList(planId);
+        return testPlanScenarioCaseService.getFailureCases(planId);
+    }
+
+    @GetMapping("/list/all/{planId}")
+    public List<TestPlanFailureScenarioDTO> getAllList(@PathVariable String planId) {
+        return testPlanScenarioCaseService.getAllCases(planId);
     }
 
     @PostMapping("/selectAllTableRows")

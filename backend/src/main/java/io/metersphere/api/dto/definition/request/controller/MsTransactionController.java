@@ -4,6 +4,7 @@ import com.alibaba.fastjson.annotation.JSONType;
 import io.metersphere.api.dto.definition.request.ParameterConfig;
 import io.metersphere.plugin.core.MsParameter;
 import io.metersphere.plugin.core.MsTestElement;
+import io.metersphere.commons.constants.DelimiterConstants;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.collections.CollectionUtils;
@@ -33,7 +34,14 @@ public class MsTransactionController extends MsTestElement {
         if (!config.isOperating() && !this.isEnable()) {
             return;
         }
-        final HashTree groupTree = tree.add(transactionController());
+
+        TransactionController transactionController = transactionController();
+        String name = this.getParentName(this.getParent());
+        if (StringUtils.isNotEmpty(name) && !config.isOperating()) {
+            transactionController.setName(this.getName() + DelimiterConstants.SEPARATOR.toString() + name);
+        }
+
+        final HashTree groupTree = tree.add(transactionController);
         if (CollectionUtils.isNotEmpty(hashTree)) {
             hashTree.forEach(el -> {
                 // 给所有孩子加一个父亲标志

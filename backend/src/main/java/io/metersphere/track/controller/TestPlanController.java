@@ -119,10 +119,18 @@ public class TestPlanController {
         testPlanService.editTestPlanStatus(planId);
     }
 
+    @PostMapping("/edit/report/config")
+    @RequiresPermissions(PermissionConstants.PROJECT_TRACK_PLAN_READ_EDIT)
+//    @MsAuditLog(module = "track_test_plan", type = OperLogConstants.UPDATE, beforeEvent = "#msClass.getLogDetails(#planId)", content = "#msClass.getLogDetails(#planId)", msClass = TestPlanService.class)
+    public void editReportConfig(@RequestBody TestPlanDTO testPlanDTO) {
+        testPlanService.editReportConfig(testPlanDTO);
+    }
+
     @PostMapping("/delete/{testPlanId}")
     @RequiresPermissions(PermissionConstants.PROJECT_TRACK_PLAN_READ_DELETE)
     @MsAuditLog(module = "track_test_plan", type = OperLogConstants.DELETE, beforeEvent = "#msClass.getLogDetails(#testPlanId)", msClass = TestPlanService.class)
-    @SendNotice(taskType = NoticeConstants.TaskType.TEST_PLAN_TASK, event = NoticeConstants.Event.DELETE, mailTemplate = "track/TestPlanDelete", subject = "测试计划通知")
+    @SendNotice(taskType = NoticeConstants.TaskType.TEST_PLAN_TASK, target = "#targetClass.getTestPlan(#testPlanId)", targetClass = TestPlanService.class,
+            event = NoticeConstants.Event.DELETE, mailTemplate = "track/TestPlanDelete", subject = "测试计划通知")
     public int deleteTestPlan(@PathVariable String testPlanId) {
         checkPermissionService.checkTestPlanOwner(testPlanId);
         return testPlanService.deleteTestPlan(testPlanId);
@@ -205,6 +213,16 @@ public class TestPlanController {
         testPlanService.exportPlanReport(planId, response);
     }
 
+    @GetMapping("/get/report/export/{planId}")
+    public TestPlanSimpleReportDTO getExportHtmlReport(@PathVariable String planId, HttpServletResponse response) throws UnsupportedEncodingException {
+        return testPlanService.buildPlanReport(planId, true);
+    }
+
+    @GetMapping("/report/db/export/{reportId}")
+    public void exportHtmlDbReport(@PathVariable String reportId, HttpServletResponse response) throws UnsupportedEncodingException {
+        testPlanService.exportPlanDbReport(reportId, response);
+    }
+
     @GetMapping("/report/{planId}")
     public TestPlanSimpleReportDTO getReport(@PathVariable String planId) {
         return testPlanService.getReport(planId);
@@ -221,10 +239,18 @@ public class TestPlanController {
     }
 
     @PostMapping(value = "/schedule/updateEnableByPrimyKey")
-    @SendNotice(taskType = NoticeConstants.TaskType.TRACK_HOME_TASK, event = NoticeConstants.Event.CLOSE_SCHEDULE, mailTemplate = "track/ScheduleClose", subject = "测试跟踪通知")
     public Schedule updateScheduleEnableByPrimyKey(@RequestBody ScheduleInfoRequest request) {
         Schedule schedule = scheduleService.getSchedule(request.getTaskID());
         schedule.setEnable(request.isEnable());
+        apiAutomationService.updateSchedule(schedule);
+        return schedule;
+    }
+
+    @PostMapping(value = "/schedule/updateEnableByPrimyKey/disable")
+    @SendNotice(taskType = NoticeConstants.TaskType.TRACK_HOME_TASK, event = NoticeConstants.Event.CLOSE_SCHEDULE, mailTemplate = "track/ScheduleClose", subject = "测试跟踪通知")
+    public Schedule disableSchedule(@RequestBody ScheduleInfoRequest request) {
+        Schedule schedule = scheduleService.getSchedule(request.getTaskID());
+        schedule.setEnable(false);
         apiAutomationService.updateSchedule(schedule);
         return schedule;
     }

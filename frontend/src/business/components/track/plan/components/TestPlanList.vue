@@ -189,22 +189,17 @@
                                @editClick="handleEdit(scope.row)">
               <template v-slot:front>
                 <ms-table-operator-button :tip="$t('api_test.run')" icon="el-icon-video-play" class="run-button"
-                                          @exec="handleRun(scope.row)"/>
+                                          @exec="handleRun(scope.row)" v-permission="['PROJECT_TRACK_PLAN:READ+RUN']"/>
               </template>
               <template v-slot:middle>
                 <ms-table-operator-button :tip="$t('commons.copy')" icon="el-icon-copy-document"
-                                          @exec="handleCopy(scope.row)"/>
+                                          @exec="handleCopy(scope.row)" v-permission="['PROJECT_TRACK_PLAN:READ+COPY']"/>
                 <ms-table-operator-button v-permission="['PROJECT_TRACK_PLAN:READ+EDIT']"
-                                          v-if="!scope.row.reportId"
-                                          :tip="$t('test_track.plan_view.create_report')" icon="el-icon-s-data"
-                                          @exec="openTestReportTemplate(scope.row)"/>
-                <ms-table-operator-button v-if="scope.row.reportId"
-                                          v-permission="['PROJECT_TRACK_PLAN:READ+EDIT']"
                                           :tip="$t('test_track.plan_view.view_report')" icon="el-icon-s-data"
-                                          @exec="openReport(scope.row.id, scope.row.reportId)"/>
+                                          @exec="openReport(scope.row)"/>
               </template>
             </ms-table-operator>
-            <el-dropdown @command="handleCommand($event, scope.row)" class="scenario-ext-btn">
+            <el-dropdown @command="handleCommand($event, scope.row)" class="scenario-ext-btn" v-permission="['PROJECT_TRACK_PLAN:READ+DELETE','PROJECT_TRACK_PLAN:READ+SCHEDULE']">
               <el-link type="primary" :underline="false">
                 <el-icon class="el-icon-more"></el-icon>
               </el-link>
@@ -227,14 +222,13 @@
 
     <ms-table-pagination :change="initTableData" :current-page.sync="currentPage" :page-size.sync="pageSize"
                          :total="total"/>
-    <test-report-template-list @openReport="openReport" ref="testReportTemplateList"/>
-    <test-case-report-view @refresh="initTableData" ref="testCaseReportView"/>
     <ms-delete-confirm :title="$t('test_track.plan.plan_delete')" @delete="_handleDelete" ref="deleteConfirm"
                        :with-tip="enableDeleteTip">
       {{ $t('test_track.plan.plan_delete_tip') }}
     </ms-delete-confirm>
     <ms-test-plan-schedule-maintain ref="scheduleMaintain" @refreshTable="initTableData"/>
     <plan-run-mode-with-env @handleRunBatch="_handleRun" ref="runMode" :plan-case-ids="[]" :type="'plan'" :plan-id="currentPlanId"/>
+    <test-plan-report-review ref="testCaseReportView"/>
   </el-card>
 </template>
 
@@ -247,8 +241,6 @@ import MsTableOperatorButton from "../../../common/components/MsTableOperatorBut
 import MsTableOperator from "../../../common/components/MsTableOperator";
 import PlanStatusTableItem from "../../common/tableItems/plan/PlanStatusTableItem";
 import PlanStageTableItem from "../../common/tableItems/plan/PlanStageTableItem";
-import TestReportTemplateList from "../view/comonents/TestReportTemplateList";
-import TestCaseReportView from "../view/comonents/report/TestCaseReportView";
 import MsDeleteConfirm from "../../../common/components/MsDeleteConfirm";
 import {TEST_PLAN_CONFIGS} from "../../../common/components/search/search-components";
 import {
@@ -267,16 +259,16 @@ import MsTag from "@/business/components/common/components/MsTag";
 import MsTestPlanScheduleMaintain from "@/business/components/track/plan/components/ScheduleMaintain";
 import {getCurrentProjectID, getCurrentUserId, hasPermission} from "@/common/js/utils";
 import PlanRunModeWithEnv from "@/business/components/track/plan/common/PlanRunModeWithEnv";
+import TestPlanReportReview from "@/business/components/track/report/components/TestPlanReportReview";
 
 export default {
   name: "TestPlanList",
   components: {
+    TestPlanReportReview,
     MsTag,
     HeaderLabelOperate,
     HeaderCustom,
     MsDeleteConfirm,
-    TestCaseReportView,
-    TestReportTemplateList,
     PlanStageTableItem,
     PlanStatusTableItem,
     MsTestPlanScheduleMaintain,
@@ -430,8 +422,10 @@ export default {
         this.$success(this.$t('commons.delete_success'));
       });
     },
-    intoPlan(row, event, column) {
-      this.$router.push('/track/plan/view/' + row.id);
+    intoPlan(row, column, event) {
+      if (column.label !== this.$t('commons.operating')) {
+        this.$router.push('/track/plan/view/' + row.id);
+      }
     },
     filter(filters) {
       _filter(filters, this.condition);
@@ -446,13 +440,8 @@ export default {
       this.saveSortField(this.tableHeaderKey,this.condition.orders);
       this.initTableData();
     },
-    openTestReportTemplate(data) {
-      this.$refs.testReportTemplateList.open(data.id);
-    },
-    openReport(planId, reportId) {
-      if (reportId) {
-        this.$refs.testCaseReportView.open(planId, reportId);
-      }
+    openReport(plan) {
+      this.$refs.testCaseReportView.open(plan);
     },
     scheduleTask(row) {
       row.redirectFrom = "testPlan";

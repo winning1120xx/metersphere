@@ -78,7 +78,7 @@ public class TestPlanScenarioCaseService {
 
         apiTestCases.forEach(item -> {
             Project project = projectMap.get(item.getProjectId());
-            if (project.getScenarioCustomNum() != null && project.getScenarioCustomNum()) {
+            if (project != null && project.getScenarioCustomNum() != null && project.getScenarioCustomNum()) {
                 item.setCustomNum(item.getCustomNum());
             } else {
                 item.setCustomNum(item.getNum().toString());
@@ -432,13 +432,44 @@ public class TestPlanScenarioCaseService {
         }
     }
 
-    public List<TestPlanFailureScenarioDTO> getFailureList(String planId) {
-        List<TestPlanFailureScenarioDTO> apiTestCases = extTestPlanScenarioCaseMapper.getFailureList(planId);
+    public List<TestPlanFailureScenarioDTO> getAllCases(String planId) {
+        List<TestPlanFailureScenarioDTO> apiTestCases =
+                extTestPlanScenarioCaseMapper.getFailureList(planId, null);
+        return buildCases(apiTestCases);
+    }
+
+    public List<TestPlanFailureScenarioDTO> getAllCases(Collection<String> ids,String planId,String status) {
+        List<TestPlanFailureScenarioDTO> apiTestCases =
+                extTestPlanScenarioCaseMapper.getFailureListByIds(ids,planId, status);
+        return buildCases(apiTestCases);
+    }
+
+    public List<TestPlanFailureScenarioDTO> getFailureCases(String planId) {
+        List<TestPlanFailureScenarioDTO> apiTestCases =
+                extTestPlanScenarioCaseMapper.getFailureList(planId, "Fail");
+        return buildCases(apiTestCases);
+    }
+
+    public List<TestPlanFailureScenarioDTO> buildCases(List<TestPlanFailureScenarioDTO> apiTestCases ) {
         if (CollectionUtils.isEmpty(apiTestCases)) {
             return apiTestCases;
         }
         buildProjectInfo(apiTestCases);
         buildUserInfo(apiTestCases);
         return apiTestCases;
+    }
+
+    public TestPlanApiScenario selectByReportId(String reportId) {
+        TestPlanApiScenarioExample example = new TestPlanApiScenarioExample();
+        example.createCriteria().andReportIdEqualTo(reportId);
+        List<TestPlanApiScenario> testPlanApiScenarios = testPlanApiScenarioMapper.selectByExample(example);
+        if (CollectionUtils.isNotEmpty(testPlanApiScenarios)) {
+            return testPlanApiScenarios.get(0);
+        }
+        return null;
+    }
+
+    public String getProjectIdById(String testPlanScenarioId) {
+        return extTestPlanScenarioCaseMapper.getProjectIdById(testPlanScenarioId);
     }
 }

@@ -201,7 +201,7 @@ public class ApiAutomationController {
     public String runByJenkins(@RequestBody RunScenarioRequest request) {
         request.setExecuteType(ExecuteType.Saved.name());
         request.setTriggerMode(TriggerMode.API.name());
-        request.setRunMode(ApiRunMode.SCENARIO.name());
+        request.setRunMode(ApiRunMode.JENKINS.name());
         return apiAutomationService.run(request);
     }
 
@@ -271,8 +271,9 @@ public class ApiAutomationController {
     }
 
     @PostMapping("/batchCopy")
-    public void batchCopy(@RequestBody ApiScenarioBatchRequest request) {
-        apiAutomationService.batchCopy(request);
+    public BatchOperaResponse batchCopy(@RequestBody ApiScenarioBatchRequest request) {
+        BatchOperaResponse response = apiAutomationService.batchCopy(request);
+        return response;
     }
 
 

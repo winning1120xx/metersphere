@@ -159,6 +159,9 @@ export default {
   props: {
     testPlanReceiverOptions: {
       type: Array
+    },
+    receiveTypeOptions: {
+      type: Array
     }
   },
   data() {
@@ -203,12 +206,6 @@ export default {
         // {value: 'SUCCESS_ONE_BY_ONE', label: '逐条成功（接口）'},
         // {value: 'FAIL_ONE_BY_ONE', label: '逐条失败（接口）'},
       ],
-      receiveTypeOptions: [
-        {value: 'EMAIL', label: this.$t('organization.message.mail')},
-        {value: 'NAIL_ROBOT', label: this.$t('organization.message.nail_robot')},
-        {value: 'WECHAT_ROBOT', label: this.$t('organization.message.enterprise_wechat_robot')},
-        {value: 'LARK', label: this.$t('organization.message.lark')}
-      ],
     };
   },
   methods: {
@@ -216,7 +213,7 @@ export default {
       this.result = this.$get('/notice/search/message/type/' + TASK_TYPE, response => {
         this.testCasePlanTask = response.data;
         // 上报通知数
-        this.$emit("noticeSize", {taskType: 'track', size: this.testCasePlanTask.length});
+        this.$emit("noticeSize", {module: 'track', data: this.testCasePlanTask, taskType: TASK_TYPE});
         this.testCasePlanTask.forEach(planTask => {
           this.handleTestPlanReceivers(planTask);
         });
@@ -247,7 +244,7 @@ export default {
       Task.isSet = true;
       Task.identification = '';
       Task.taskType = TASK_TYPE;
-      this.testCasePlanTask.push(Task);
+      this.testCasePlanTask.unshift(Task);
     },
     handleAddTask(index, data) {
 
@@ -267,8 +264,8 @@ export default {
       }
     },
     addTask(data) {
-      data.isSet = false;
       this.result = this.$post("/notice/save/message/task", data, () => {
+        data.isSet = false;
         this.initForm();
         this.$success(this.$t('commons.save_success'));
       });
@@ -294,6 +291,7 @@ export default {
     },
     handleTestPlanReceivers(row) {
       let testPlanReceivers = JSON.parse(JSON.stringify(this.testPlanReceiverOptions));
+      let i2 = row.userIds.indexOf('CREATOR');
       switch (row.event) {
         case  "CREATE":
           testPlanReceivers.unshift({id: 'EXECUTOR', name: this.$t('test_track.plan_view.executor')});
@@ -303,8 +301,10 @@ export default {
         case "COMMENT":
         case "COMPLETE":
           testPlanReceivers.unshift({id: 'CREATOR', name: this.$t('commons.create_user')});
-          if (row.userIds.indexOf('CREATOR') < 0) {
-            row.userIds.unshift('CREATOR');
+          if (row.isSet) {
+            if (i2 < 0) {
+              row.userIds.unshift('CREATOR');
+            }
           }
           break;
         default:

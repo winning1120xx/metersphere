@@ -8,6 +8,7 @@ import io.metersphere.commons.constants.*;
 import io.metersphere.commons.utils.CommonBeanFactory;
 import io.metersphere.commons.utils.DateUtils;
 import io.metersphere.commons.utils.LogUtil;
+import io.metersphere.commons.utils.SessionUtils;
 import io.metersphere.dto.BaseSystemConfigDTO;
 import io.metersphere.i18n.Translator;
 import io.metersphere.notice.sender.NoticeModel;
@@ -15,7 +16,6 @@ import io.metersphere.notice.service.NoticeSendService;
 import io.metersphere.service.SystemParameterService;
 import io.metersphere.track.request.testcase.TrackCount;
 import io.metersphere.track.service.TestPlanApiCaseService;
-import io.metersphere.track.service.TestPlanReportService;
 import io.metersphere.track.service.TestPlanScenarioCaseService;
 import io.metersphere.track.service.TestPlanTestCaseService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -40,8 +40,6 @@ public class TestResultService {
     private ApiDefinitionService apiDefinitionService;
     @Resource
     private ApiDefinitionExecResultService apiDefinitionExecResultService;
-    @Resource
-    private TestPlanReportService testPlanReportService;
     @Resource
     private ApiScenarioReportService apiScenarioReportService;
     @Resource
@@ -88,12 +86,10 @@ public class TestResultService {
                 reportTask.setExecutionTime(DateUtils.getTimeString(apiTestCaseWithBLOBs.getCreateTime()));
                 reportTask.setExecutionEnvironment(name);
                 //测试计划用例，定时，jenkins
-            } else if (StringUtils.equalsAny(runMode, ApiRunMode.API_PLAN.name(), ApiRunMode.SCHEDULE_API_PLAN.name(), ApiRunMode.JENKINS_API_PLAN.name())) {
+            } else if (StringUtils.equalsAny(runMode, ApiRunMode.API_PLAN.name(), ApiRunMode.SCHEDULE_API_PLAN.name(), ApiRunMode.JENKINS_API_PLAN.name(), ApiRunMode.MANUAL_PLAN.name())) {
                 //测试计划定时任务-接口执行逻辑的话，需要同步测试计划的报告数据
-                if (StringUtils.equals(runMode, ApiRunMode.SCHEDULE_API_PLAN.name())) {
-                    apiDefinitionExecResultService.saveApiResultByScheduleTask(testResult, debugReportId, ApiRunMode.SCHEDULE_API_PLAN.name(), ReportTriggerMode.SCHEDULE.name());
-                } else if (StringUtils.equals(runMode, ApiRunMode.JENKINS_API_PLAN.name())) {
-                    apiDefinitionExecResultService.saveApiResultByScheduleTask(testResult, debugReportId, ApiRunMode.JENKINS_API_PLAN.name(), ReportTriggerMode.API.name());
+                if (StringUtils.equalsAny(runMode, ApiRunMode.SCHEDULE_API_PLAN.name(), ApiRunMode.JENKINS_API_PLAN.name(), ApiRunMode.MANUAL_PLAN.name())) {
+                    apiDefinitionExecResultService.saveApiResultByScheduleTask(testResult, debugReportId, runMode);
                 } else {
                     apiDefinitionExecResultService.saveApiResult(testResult, ApiRunMode.API_PLAN.name(), TriggerMode.MANUAL.name());
                 }
@@ -122,7 +118,7 @@ public class TestResultService {
 
                 //报告内容
                 reportTask = new ApiTestReportVariable();
-                if(StringUtils.equalsAny(runMode, ApiRunMode.SCHEDULE_SCENARIO.name())) {
+                if (StringUtils.equalsAny(runMode, ApiRunMode.SCHEDULE_SCENARIO.name())) {
                     reportTask.setStatus(scenarioReport.getStatus());
                     reportTask.setId(scenarioReport.getId());
                     reportTask.setTriggerMode(scenarioReport.getTriggerMode());
@@ -159,6 +155,7 @@ public class TestResultService {
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             LogUtil.error(e.getMessage(), e);
         }
     }
@@ -244,6 +241,7 @@ public class TestResultService {
         paramMap.put("executionEnvironment", report.getExecutionEnvironment());
         paramMap.put("principal", report.getPrincipal());
         NoticeModel noticeModel = NoticeModel.builder()
+                .operator(SessionUtils.getUserId())
                 .successContext(successContext)
                 .successMailTemplate("ApiSuccessfulNotification")
                 .failedContext(failedContext)
@@ -254,6 +252,6 @@ public class TestResultService {
                 .subject(subject)
                 .paramMap(paramMap)
                 .build();
-        noticeSendService.send(report.getTriggerMode(), noticeModel);
+        noticeSendService.send(report.getTriggerMode(), NoticeConstants.TaskType.API_DEFINITION_TASK, noticeModel);
     }
 }

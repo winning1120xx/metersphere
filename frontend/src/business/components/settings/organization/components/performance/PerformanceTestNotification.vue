@@ -8,21 +8,21 @@
           {{ $t('organization.message.create_new_notification') }}
         </el-button>
         <el-popover
-          placement="right-end"
-          title="示例"
-          width="600"
-          trigger="click">
+            placement="right-end"
+            title="示例"
+            width="600"
+            trigger="click">
           <ms-code-edit :read-only="true" height="400px" :data.sync="title" :modes="modes" :mode="'html'"/>
           <el-button icon="el-icon-warning" plain size="mini" slot="reference">
             {{ $t('organization.message.mail_template_example') }}
           </el-button>
         </el-popover>
         <el-popover
-          placement="right-end"
-          title="示例"
-          width="400"
-          trigger="click"
-          :content="robotTitle">
+            placement="right-end"
+            title="示例"
+            width="400"
+            trigger="click"
+            :content="robotTitle">
           <ms-code-edit :read-only="true" height="200px" :data.sync="robotTitle" :modes="modes" :mode="'text'"/>
           <el-button icon="el-icon-warning" plain size="mini" slot="reference">
             {{ $t('organization.message.robot_template') }}
@@ -33,11 +33,11 @@
     <el-row>
       <el-col :span="24">
         <el-table
-          :data="defectTask"
-          class="tb-edit"
-          border
-          :cell-style="rowClass"
-          :header-cell-style="headClass"
+            :data="defectTask"
+            class="tb-edit"
+            border
+            :cell-style="rowClass"
+            :header-cell-style="headClass"
         >
           <el-table-column :label="$t('schedule.event')" min-width="15%" prop="events">
             <template slot-scope="scope">
@@ -45,10 +45,10 @@
                          @change="handleReceivers(scope.row)"
                          prop="event" :disabled="!scope.row.isSet">
                 <el-option
-                  v-for="item in eventOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
+                    v-for="item in eventOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
                 </el-option>
               </el-select>
             </template>
@@ -59,10 +59,10 @@
                          :placeholder="$t('commons.please_select')"
                          style="width: 100%;" :disabled="!row.isSet">
                 <el-option
-                  v-for="item in row.receiverOptions"
-                  :key="item.id"
-                  :label="item.name"
-                  :value="item.id">
+                    v-for="item in row.receiverOptions"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id">
                 </el-option>
               </el-select>
             </template>
@@ -73,10 +73,10 @@
                          size="mini"
                          :disabled="!scope.row.isSet" @change="handleEdit(scope.$index, scope.row)">
                 <el-option
-                  v-for="item in receiveTypeOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
+                    v-for="item in receiveTypeOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
                 </el-option>
               </el-select>
             </template>
@@ -90,48 +90,48 @@
           <el-table-column :label="$t('commons.operating')" min-width="25%" prop="result">
             <template v-slot:default="scope">
               <ms-tip-button
-                circle
-                type="success"
-                size="mini"
-                v-if="scope.row.isSet"
-                v-xpack
-                @click="handleTemplate(scope.$index,scope.row)"
-                :tip="$t('organization.message.template')"
-                icon="el-icon-tickets"/>
+                  circle
+                  type="success"
+                  size="mini"
+                  v-if="scope.row.isSet"
+                  v-xpack
+                  @click="handleTemplate(scope.$index,scope.row)"
+                  :tip="$t('organization.message.template')"
+                  icon="el-icon-tickets"/>
               <ms-tip-button
-                circle
-                type="primary"
-                size="mini"
-                v-show="scope.row.isSet"
-                @click="handleAddTask(scope.$index,scope.row)"
-                :tip="$t('commons.add')"
-                icon="el-icon-check"/>
+                  circle
+                  type="primary"
+                  size="mini"
+                  v-show="scope.row.isSet"
+                  @click="handleAddTask(scope.$index,scope.row)"
+                  :tip="$t('commons.add')"
+                  icon="el-icon-check"/>
               <ms-tip-button
-                circle
-                size="mini"
-                v-show="scope.row.isSet"
-                @click="removeRowTask(scope.$index,defectTask)"
-                :tip="$t('commons.cancel')"
-                icon="el-icon-refresh-left"/>
+                  circle
+                  size="mini"
+                  v-show="scope.row.isSet"
+                  @click="removeRowTask(scope.$index,defectTask)"
+                  :tip="$t('commons.cancel')"
+                  icon="el-icon-refresh-left"/>
               <ms-tip-button
-                el-button
-                circle
-                type="primary"
-                size="mini"
-                icon="el-icon-edit"
-                v-show="!scope.row.isSet"
-                :tip="$t('commons.edit')"
-                @click="handleEditTask(scope.$index,scope.row)"
-                v-permission="['ORGANIZATION_MESSAGE:READ+EDIT']"/>
+                  el-button
+                  circle
+                  type="primary"
+                  size="mini"
+                  icon="el-icon-edit"
+                  v-show="!scope.row.isSet"
+                  :tip="$t('commons.edit')"
+                  @click="handleEditTask(scope.$index,scope.row)"
+                  v-permission="['ORGANIZATION_MESSAGE:READ+EDIT']"/>
               <ms-tip-button
-                circle
-                type="danger"
-                icon="el-icon-delete"
-                size="mini"
-                v-show="!scope.row.isSet"
-                @click="deleteRowTask(scope.$index,scope.row)"
-                :tip="$t('commons.delete')"
-                v-permission="['ORGANIZATION_MESSAGE:READ+EDIT']"/>
+                  circle
+                  type="danger"
+                  icon="el-icon-delete"
+                  size="mini"
+                  v-show="!scope.row.isSet"
+                  @click="deleteRowTask(scope.$index,scope.row)"
+                  :tip="$t('commons.delete')"
+                  v-permission="['ORGANIZATION_MESSAGE:READ+EDIT']"/>
             </template>
           </el-table-column>
         </el-table>
@@ -160,23 +160,26 @@ export default {
   props: {
     receiverOptions: {
       type: Array
+    },
+    receiveTypeOptions: {
+      type: Array
     }
   },
   data() {
     return {
       modes: ['text', 'html'],
       title: "<!DOCTYPE html>\n" +
-        "<html lang=\"en\">\n" +
-        "<head>\n" +
-        "    <meta charset=\"UTF-8\">\n" +
-        "    <title>MeterSphere</title>\n" +
-        "</head>\n" +
-        "<body>\n" +
-        "<div>\n" +
-        "    <p>${creator}创建了测试用例</p>\n" +
-        "</div>\n" +
-        "</body>\n" +
-        "</html>",
+          "<html lang=\"en\">\n" +
+          "<head>\n" +
+          "    <meta charset=\"UTF-8\">\n" +
+          "    <title>MeterSphere</title>\n" +
+          "</head>\n" +
+          "<body>\n" +
+          "<div>\n" +
+          "    <p>${creator}创建了测试用例</p>\n" +
+          "</div>\n" +
+          "</body>\n" +
+          "</html>",
       robotTitle: "【任务通知】:${creator}创建了测试用例",
       defectTask: [{
         taskType: "defectTask",
@@ -192,12 +195,7 @@ export default {
         {value: 'CREATE', label: this.$t('commons.create')},
         {value: 'UPDATE', label: this.$t('commons.update')},
         {value: 'DELETE', label: this.$t('commons.delete')},
-      ],
-      receiveTypeOptions: [
-        {value: 'EMAIL', label: this.$t('organization.message.mail')},
-        {value: 'NAIL_ROBOT', label: this.$t('organization.message.nail_robot')},
-        {value: 'WECHAT_ROBOT', label: this.$t('organization.message.enterprise_wechat_robot')},
-        {value: 'LARK', label: this.$t('organization.message.lark')}
+        {value: 'EXECUTE_COMPLETED', label: this.$t('commons.run_completed')},
       ],
     };
   },
@@ -206,7 +204,7 @@ export default {
       this.result = this.$get('/notice/search/message/type/' + TASK_TYPE, response => {
         this.defectTask = response.data;
         // 上报通知数
-        this.$emit("noticeSize", {taskType: 'performance', size: this.defectTask.length});
+        this.$emit("noticeSize", {module: 'performance', data: this.defectTask, taskType: TASK_TYPE});
         this.defectTask.forEach(planTask => {
           this.handleReceivers(planTask);
         });
@@ -238,7 +236,7 @@ export default {
       task.isSet = true;
       task.identification = '';
       task.taskType = TASK_TYPE;
-      this.defectTask.push(task);
+      this.defectTask.unshift(task);
     },
     handleAddTask(index, data) {
 
@@ -258,8 +256,8 @@ export default {
       }
     },
     addTask(data) {
-      data.isSet = false;
       this.result = this.$post("/notice/save/message/task", data, () => {
+        data.isSet = false;
         this.initForm();
         this.$success(this.$t('commons.save_success'));
       });
@@ -291,26 +289,36 @@ export default {
     handleReceivers(row) {
       let receiverOptions = JSON.parse(JSON.stringify(this.receiverOptions));
       let i = row.userIds.indexOf('FOLLOW_PEOPLE');
-
+      let i2 = row.userIds.indexOf('CREATOR');
       switch (row.event) {
-        case "UPDATE":
-          receiverOptions.unshift({id: 'FOLLOW_PEOPLE', name: this.$t('api_test.automation.follow_people')});
-          receiverOptions.unshift({id: 'CREATOR', name: this.$t('commons.create_user')});
-          if (row.userIds.indexOf('CREATOR') < 0) {
-            row.userIds.unshift('CREATOR');
-          }
-          if (row.userIds.indexOf('FOLLOW_PEOPLE') < 0) {
-            row.userIds.unshift('FOLLOW_PEOPLE');
-          }
-          break;
-        case "DELETE":
-          receiverOptions.unshift({id: 'FOLLOW_PEOPLE', name: this.$t('api_test.automation.follow_people')});
-          receiverOptions.unshift({id: 'CREATOR', name: this.$t('commons.create_user')});
-          if (row.userIds.indexOf('CREATOR') < 0) {
-            row.userIds.unshift('CREATOR');
+        case "CREATE":
+          if (i2 > -1) {
+            row.userIds.splice(i2, 1);
           }
           if (i > -1) {
             row.userIds.splice(i, 1);
+          }
+          break;
+        case "UPDATE":
+          receiverOptions.unshift({id: 'FOLLOW_PEOPLE', name: this.$t('api_test.automation.follow_people')});
+          receiverOptions.unshift({id: 'CREATOR', name: this.$t('commons.create_user')});
+          if (row.isSet) {
+            if (i2 < 0) {
+              row.userIds.unshift('CREATOR');
+            }
+            if (i < 0) {
+              row.userIds.unshift('FOLLOW_PEOPLE');
+            }
+          }
+          break;
+        case "DELETE":
+        case "EXECUTE_COMPLETED":
+          receiverOptions.unshift({id: 'FOLLOW_PEOPLE', name: this.$t('api_test.automation.follow_people')});
+          receiverOptions.unshift({id: 'CREATOR', name: this.$t('commons.create_user')});
+          if (row.isSet) {
+            if (i2 < 0) {
+              row.userIds.unshift('CREATOR');
+            }
           }
           break;
         default:

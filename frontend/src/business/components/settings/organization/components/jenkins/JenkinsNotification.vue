@@ -163,6 +163,9 @@ export default {
   props: {
     jenkinsReceiverOptions: {
       type: Array
+    },
+    receiveTypeOptions: {
+      type: Array
     }
   },
   data() {
@@ -216,12 +219,6 @@ export default {
         {value: 'EXECUTE_SUCCESSFUL', label: this.$t('schedule.event_success')},
         {value: 'EXECUTE_FAILED', label: this.$t('schedule.event_failed')}
       ],
-      receiveTypeOptions: [
-        {value: 'EMAIL', label: this.$t('organization.message.mail')},
-        {value: 'NAIL_ROBOT', label: this.$t('organization.message.nail_robot')},
-        {value: 'WECHAT_ROBOT', label: this.$t('organization.message.enterprise_wechat_robot')},
-        {value: 'LARK', label: this.$t('organization.message.lark')}
-      ],
     };
   },
   activated() {
@@ -232,7 +229,7 @@ export default {
       this.result = this.$get('/notice/search/message/type/' + TASK_TYPE, response => {
         this.jenkinsTask = response.data;
         // 上报通知数
-        this.$emit("noticeSize", {taskType: 'jenkins', size: this.jenkinsTask.length});
+        this.$emit("noticeSize", {module: 'jenkins', data: this.jenkinsTask, taskType:TASK_TYPE});
       });
     },
     handleEdit(index, data) {
@@ -251,7 +248,7 @@ export default {
       Task.isSet = true;
       Task.identification = '';
       Task.taskType = TASK_TYPE;
-      this.jenkinsTask.push(Task);
+      this.jenkinsTask.unshift(Task);
     },
     handleAddTask(index, data) {
       if (data.event && data.userIds.length > 0 && data.type) {

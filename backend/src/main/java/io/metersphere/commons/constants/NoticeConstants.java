@@ -29,14 +29,17 @@ public interface NoticeConstants {
         String NAIL_ROBOT = "NAIL_ROBOT";
         String WECHAT_ROBOT = "WECHAT_ROBOT";
         String LARK = "LARK";
+        String IN_SITE = "IN_SITE";
     }
 
     interface Event {
         String EXECUTE_SUCCESSFUL = "EXECUTE_SUCCESSFUL";
         String EXECUTE_FAILED = "EXECUTE_FAILED";
+        String EXECUTE_COMPLETED = "EXECUTE_COMPLETED";
         String CREATE = "CREATE";
         String UPDATE = "UPDATE";
         String DELETE = "DELETE";
+        String COMPLETE = "COMPLETE";
 
         String CASE_CREATE = "CASE_CREATE";
         String CASE_UPDATE = "CASE_UPDATE";
@@ -53,5 +56,6 @@ public interface NoticeConstants {
         String EXECUTOR = "EXECUTOR";//负责人(评审人）
         String MAINTAINER = "MAINTAINER";//维护人
         String FOLLOW_PEOPLE = "FOLLOW_PEOPLE";//关注人
+        String PROCESSOR = "PROCESSOR";//处理人
     }
 }

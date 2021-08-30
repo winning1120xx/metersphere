@@ -160,6 +160,9 @@ export default {
   props: {
     receiverOptions: {
       type: Array
+    },
+    receiveTypeOptions: {
+      type: Array
     }
   },
   data() {
@@ -192,12 +195,8 @@ export default {
         {value: 'CREATE', label: this.$t('commons.create')},
         {value: 'UPDATE', label: this.$t('commons.update')},
         {value: 'DELETE', label: this.$t('commons.delete')},
-      ],
-      receiveTypeOptions: [
-        {value: 'EMAIL', label: this.$t('organization.message.mail')},
-        {value: 'NAIL_ROBOT', label: this.$t('organization.message.nail_robot')},
-        {value: 'WECHAT_ROBOT', label: this.$t('organization.message.enterprise_wechat_robot')},
-        {value: 'LARK', label: this.$t('organization.message.lark')}
+        {value: 'EXECUTE_SUCCESSFUL', label: this.$t('commons.run_success')},
+        {value: 'EXECUTE_FAILED', label: this.$t('commons.run_fail')},
       ],
     };
   },
@@ -206,7 +205,7 @@ export default {
       this.result = this.$get('/notice/search/message/type/' + TASK_TYPE, response => {
         this.defectTask = response.data;
         // 上报通知数
-        this.$emit("noticeSize", {taskType: 'api', size: this.defectTask.length});
+        this.$emit("noticeSize", {module: 'api', data: this.defectTask, taskType: TASK_TYPE});
         this.defectTask.forEach(planTask => {
           this.handleReceivers(planTask);
         });
@@ -238,7 +237,7 @@ export default {
       task.isSet = true;
       task.identification = '';
       task.taskType = TASK_TYPE;
-      this.defectTask.push(task);
+      this.defectTask.unshift(task);
     },
     handleAddTask(index, data) {
 
@@ -258,8 +257,8 @@ export default {
       }
     },
     addTask(data) {
-      data.isSet = false;
       this.result = this.$post("/notice/save/message/task", data, () => {
+        data.isSet = false;
         this.initForm();
         this.$success(this.$t('commons.save_success'));
       });
@@ -291,26 +290,38 @@ export default {
     handleReceivers(row) {
       let receiverOptions = JSON.parse(JSON.stringify(this.receiverOptions));
       let i = row.userIds.indexOf('FOLLOW_PEOPLE');
+      let i2 = row.userIds.indexOf('CREATOR');
 
       switch (row.event) {
-        case "UPDATE":
-          receiverOptions.unshift({id: 'FOLLOW_PEOPLE', name: this.$t('api_test.automation.follow_people')});
-          receiverOptions.unshift({id: 'CREATOR', name: this.$t('commons.create_user')});
-          if (row.userIds.indexOf('CREATOR') < 0) {
-            row.userIds.unshift('CREATOR');
-          }
-          if (row.userIds.indexOf('FOLLOW_PEOPLE') < 0) {
-            row.userIds.unshift('FOLLOW_PEOPLE');
-          }
-          break;
-        case "DELETE":
-          receiverOptions.unshift({id: 'FOLLOW_PEOPLE', name: this.$t('api_test.automation.follow_people')});
-          receiverOptions.unshift({id: 'CREATOR', name: this.$t('commons.create_user')});
-          if (row.userIds.indexOf('CREATOR') < 0) {
-            row.userIds.unshift('CREATOR');
+        case "CREATE":
+          if (i2 > -1) {
+            row.userIds.splice(i2, 1);
           }
           if (i > -1) {
             row.userIds.splice(i, 1);
+          }
+          break;
+        case "UPDATE":
+          receiverOptions.unshift({id: 'FOLLOW_PEOPLE', name: this.$t('api_test.automation.follow_people')});
+          receiverOptions.unshift({id: 'CREATOR', name: this.$t('commons.create_user')});
+          if (row.isSet) {
+            if (i2 < 0) {
+              row.userIds.unshift('CREATOR');
+            }
+            if (i < 0) {
+              row.userIds.unshift('FOLLOW_PEOPLE');
+            }
+          }
+          break;
+        case "DELETE":
+        case "EXECUTE_SUCCESSFUL":
+        case "EXECUTE_FAILED":
+          receiverOptions.unshift({id: 'FOLLOW_PEOPLE', name: this.$t('api_test.automation.follow_people')});
+          receiverOptions.unshift({id: 'CREATOR', name: this.$t('commons.create_user')});
+          if (row.isSet) {
+            if (i2 < 0) {
+              row.userIds.unshift('CREATOR');
+            }
           }
           break;
         default:

@@ -16,7 +16,8 @@ export default {
     reportId: String,
     runData: Array,
     type: String,
-    envMap: Map
+    envMap: Map,
+    isStop: Boolean,
   },
   data() {
     return {
@@ -32,6 +33,11 @@ export default {
     // 初始化
     reportId() {
       this.run()
+    },
+    isStop() {
+      if (!this.isStop && this.websocket && this.websocket.close instanceof Function) {
+        this.websocket.close();
+      }
     }
   },
   methods: {

@@ -295,7 +295,7 @@ export default {
       // updata: false,
       type: TEST_PLAN_FUNCTION_TEST_CASE,
       fields: [],
-      fieldsWidth: getCustomTableWidth('TRACK_TEST_CASE'),
+      fieldsWidth: getCustomTableWidth('TEST_PLAN_FUNCTION_TEST_CASE'),
       screenHeight: 'calc(100vh - 275px)',
       tableLabel: [],
       result: {},
@@ -470,7 +470,9 @@ export default {
               this.$set(this.tableData[i], "issuesContent", JSON.parse(this.tableData[i].issues));
             }
           }
-          this.$refs.table.clear();
+          if (this.$refs.table) {
+            this.$refs.table.clear();
+          }
           checkTableRowIsSelected(this, this.$refs.table);
         });
       }

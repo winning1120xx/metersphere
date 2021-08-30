@@ -179,6 +179,7 @@ export default {
     testing: "測試中",
     environment: "運行環境",
     run_success: "執行成功",
+    run_completed: "執行完成",
     run_fail: "執行失敗",
     selector: {
       required: "必填",
@@ -1004,6 +1005,8 @@ export default {
       database_config: "數據庫配置",
       tcp_config: "TCP配置",
       import: "導入環境",
+      request_timeout: "連接超時",
+      response_timeout: "響應超市",
     },
     scenario: {
       scenario: "場景",
@@ -1484,6 +1487,7 @@ export default {
       import: {
         import: "導入用例",
         case_import: "導入測試用例",
+        case_export: "導出測試用例",
         download_template: "下載模版",
         click_upload: "點擊上傳",
         upload_limit: "只能上傳xls/xlsx文件，且不超過100M",

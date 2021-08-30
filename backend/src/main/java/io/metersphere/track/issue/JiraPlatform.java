@@ -141,22 +141,35 @@ public class JiraPlatform extends AbstractIssuePlatform {
             RestTemplate restTemplate = new RestTemplate();
             //post
             ResponseEntity<String> responseEntity = null;
-            responseEntity = restTemplate.exchange(url + "/rest/api/2/search?jql=project="+key+"+AND+issuetype="+type+"&fields=summary,issuetype",
-                    HttpMethod.GET, requestEntity, String.class);
-            String body = responseEntity.getBody();
-            JSONObject jsonObject = JSONObject.parseObject(body);
-            JSONArray jsonArray = jsonObject.getJSONArray("issues");
-            for (int i = 0; i < jsonArray.size(); i++) {
-                JSONObject o = jsonArray.getJSONObject(i);
-                String issueKey = o.getString("key");
-                JSONObject fields = o.getJSONObject("fields");
-                String summary = fields.getString("summary");
-                DemandDTO demandDTO = new DemandDTO();
-                demandDTO.setName(summary);
-                demandDTO.setId(issueKey);
-                demandDTO.setPlatform(IssuesManagePlatform.Jira.name());
-                list.add(demandDTO);
-            }
+            int maxResults = 50, startAt = 0, total = 0, currentStartAt = 0;
+            do {
+                String jql = url + "/rest/api/2/search?jql=project=" + key + "+AND+issuetype=" + type
+                        + "&maxResults=" + maxResults + "&startAt=" + startAt + "&fields=summary,issuetype";
+                responseEntity = restTemplate.exchange(jql,
+                        HttpMethod.GET, requestEntity, String.class);
+                String body = responseEntity.getBody();
+                JSONObject jsonObject = JSONObject.parseObject(body);
+                JSONArray jsonArray = jsonObject.getJSONArray("issues");
+                if (jsonArray.size() == 0) {
+                    break;
+                }
+                total = jsonObject.getInteger("total");
+                startAt = startAt + maxResults;
+                currentStartAt = jsonObject.getInteger("startAt");
+                for (int i = 0; i < jsonArray.size(); i++) {
+                    JSONObject o = jsonArray.getJSONObject(i);
+                    String issueKey = o.getString("key");
+                    JSONObject fields = o.getJSONObject("fields");
+                    String summary = fields.getString("summary");
+                    DemandDTO demandDTO = new DemandDTO();
+                    demandDTO.setName(summary);
+                    demandDTO.setId(issueKey);
+                    demandDTO.setPlatform(IssuesManagePlatform.Jira.name());
+                    list.add(demandDTO);
+                }
+            } while (currentStartAt + maxResults < total);
+
+
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
         }
@@ -219,10 +232,22 @@ public class JiraPlatform extends AbstractIssuePlatform {
             if (StringUtils.isNotBlank(item.getCustomData())) {
                 if (StringUtils.isNotBlank(item.getValue())) {
                     if (StringUtils.isNotBlank(item.getType()) &&
-                            StringUtils.equalsAny(item.getType(), "select", "multipleSelect", "checkbox", "radio", "member", "multipleMember")) {
+                            StringUtils.equalsAny(item.getType(), "select", "radio", "member")) {
                         JSONObject param = new JSONObject();
                         param.put("id", item.getValue());
                         fields.put(item.getCustomData(), param);
+                    } else if (StringUtils.isNotBlank(item.getType()) &&
+                            StringUtils.equalsAny(item.getType(),  "multipleSelect", "checkbox", "multipleMember")) {
+                       JSONArray attrs = new JSONArray();
+                        if (StringUtils.isNotBlank(item.getValue())) {
+                            JSONArray values = JSONObject.parseArray(item.getValue());
+                            values.forEach(v -> {
+                                JSONObject param = new JSONObject();
+                                param.put("id", v);
+                                attrs.add(param);
+                            });
+                        }
+                        fields.put(item.getCustomData(), attrs);
                     } else {
                         fields.put(item.getCustomData(), item.getValue());
                     }
@@ -284,8 +309,12 @@ public class JiraPlatform extends AbstractIssuePlatform {
         issues.forEach(item -> {
             setConfig();
             try {
+                IssuesWithBLOBs issuesWithBLOBs = issuesMapper.selectByPrimaryKey(item.getId());
                 parseIssue(item, jiraClientV2.getIssues(item.getId()));
-                item.setDescription(htmlDesc2MsDesc(item.getDescription()));
+                String desc = htmlDesc2MsDesc(item.getDescription());
+                // 保留之前上传的图片
+                String images = getImages(issuesWithBLOBs.getDescription());
+                item.setDescription(desc + "\n" + images);
                 issuesMapper.updateByPrimaryKeySelective(item);
             } catch (HttpClientErrorException e) {
                 if (e.getRawStatusCode() == 404) {

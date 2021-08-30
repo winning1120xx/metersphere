@@ -107,7 +107,13 @@ export default {
   },
   created() {
     if (this.scenarioId) {
-      this.getApiScenario();
+      this.getApiScenario().then(() => {
+        this.initTree();
+        this.initWebSocket();
+        this.initMessageSocket();
+        this.clearDebug();
+        this.loading = false;
+      });
     } else {
       if (this.scenario && this.scenario.scenarioDefinition) {
         this.content.scenarioStepTotal = this.scenario.scenarioDefinition.hashTree.length;
@@ -129,24 +135,21 @@ export default {
   methods: {
     getApiScenario() {
       this.loading = true;
-      this.result = this.$get("/api/automation/getApiScenario/" + this.scenarioId, response => {
-        if (response.data) {
-          this.path = "/api/automation/update";
-          if (response.data.scenarioDefinition != null) {
-            let obj = JSON.parse(response.data.scenarioDefinition);
-            this.scenario.scenarioDefinition = obj;
-            this.scenario.name = response.data.name;
-            this.content.scenarioStepTotal = obj.hashTree.length;
-            this.initTree();
-            this.initWebSocket();
-            this.initMessageSocket();
-            this.clearDebug();
-            if (this.scenario.scenarioDefinition && this.scenario.scenarioDefinition.hashTree) {
-              this.sort(this.scenario.scenarioDefinition.hashTree);
+      return new Promise((resolve) => {
+        this.result = this.$get("/api/automation/getApiScenario/" + this.scenarioId, response => {
+          if (response.data) {
+            if (response.data.scenarioDefinition != null) {
+              let obj = JSON.parse(response.data.scenarioDefinition);
+              this.scenario.scenarioDefinition = obj;
+              this.scenario.name = response.data.name;
+              this.content.scenarioStepTotal = obj.hashTree.length;
+              if (this.scenario.scenarioDefinition && this.scenario.scenarioDefinition.hashTree) {
+                this.sort(this.scenario.scenarioDefinition.hashTree);
+              }
+              resolve();
             }
-            this.loading = false;
           }
-        }
+        })
       })
     },
     sort(stepArray) {
@@ -156,7 +159,6 @@ export default {
           stepArray[i].resourceId = getUUID();
         }
         if (stepArray[i].hashTree && stepArray[i].hashTree.length > 0) {
-          this.stepSize += stepArray[i].hashTree.length;
           this.sort(stepArray[i].hashTree);
         }
       }
@@ -197,12 +199,25 @@ export default {
         }
       })
     },
+    getType(type) {
+      switch (type) {
+        case "LoopController":
+          return "循环控制器";
+        case "TransactionController":
+          return "事物控制器";
+        case "ConstantTimer":
+          return "等待控制器";
+        case "IfController":
+          return "条件控制器";
+      }
+      return type;
+    },
     formatContent(hashTree, tree, fullPath) {
       if (hashTree) {
         hashTree.forEach(item => {
           if (item.enable) {
             item.parentIndex = fullPath ? fullPath + "_" + item.index : item.index;
-            let name = item.name ? item.name : item.type;
+            let name = item.name ? item.name : this.getType(item.type);
             let obj = {resId: item.resourceId + "_" + item.parentIndex, index: Number(item.index), label: name, value: {name: name, responseResult: {}, unexecute: true, testing: false}, children: [], unsolicited: true};
             tree.children.push(obj);
             if (ELEMENTS.get("AllSamplerProxy").indexOf(item.type) != -1) {

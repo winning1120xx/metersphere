@@ -15,12 +15,18 @@
           </span>
           <span>通知数: <span style="color: #783887;">{{ trackNoticeSize }}</span></span>
         </template>
-        <track-home-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"/>
-        <test-case-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"/>
-        <test-review-notification @noticeSize="getNoticeSize" :review-receiver-options="reviewReceiverOptions"/>
-        <test-plan-task-notification @noticeSize="getNoticeSize" :test-plan-receiver-options="testPlanReceiverOptions"/>
-        <defect-task-notification @noticeSize="getNoticeSize" :defect-receiver-options="defectReceiverOptions"/>
-        <track-report-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"/>
+        <track-home-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"
+                                 :receive-type-options="receiveTypeOptions"/>
+        <test-case-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"
+                                :receive-type-options="receiveTypeOptions"/>
+        <test-review-notification @noticeSize="getNoticeSize" :review-receiver-options="reviewReceiverOptions"
+                                  :receive-type-options="receiveTypeOptions"/>
+        <test-plan-task-notification @noticeSize="getNoticeSize" :test-plan-receiver-options="testPlanReceiverOptions"
+                                     :receive-type-options="receiveTypeOptions"/>
+        <defect-task-notification @noticeSize="getNoticeSize" :defect-receiver-options="defectReceiverOptions"
+                                  :receive-type-options="receiveTypeOptions"/>
+        <track-report-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"
+                                   :receive-type-options="receiveTypeOptions"/>
       </el-collapse-item>
       <el-collapse-item name="3">
         <template v-slot:title>
@@ -29,10 +35,14 @@
           </span>
           <span>通知数: <span style="color: #783887;">{{ apiNoticeSize }}</span></span>
         </template>
-        <api-home-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"/>
-        <api-definition-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"/>
-        <api-automation-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"/>
-        <api-report-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"/>
+        <api-home-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"
+                               :receive-type-options="receiveTypeOptions"/>
+        <api-definition-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"
+                                     :receive-type-options="receiveTypeOptions"/>
+        <api-automation-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"
+                                     :receive-type-options="receiveTypeOptions"/>
+        <api-report-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"
+                                 :receive-type-options="receiveTypeOptions"/>
       </el-collapse-item>
       <el-collapse-item name="4">
         <template v-slot:title>
@@ -41,15 +51,18 @@
           </span>
           <span>通知数: <span style="color: #783887;">{{ performanceNoticeSize }}</span></span>
         </template>
-        <performance-test-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"/>
-        <performance-report-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"/>
+        <performance-test-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"
+                                       :receive-type-options="receiveTypeOptions"/>
+        <performance-report-notification @noticeSize="getNoticeSize" :receiver-options="reviewReceiverOptions"
+                                         :receive-type-options="receiveTypeOptions"/>
       </el-collapse-item>
       <el-collapse-item name="1">
         <template v-slot:title>
           <span style="width: 200px">{{ $t('organization.message.jenkins_task_notification') }}</span>
           <span>通知数: <span style="color: #783887;">{{ jenkinsNoticeSize }}</span></span>
         </template>
-        <jenkins-notification @noticeSize="getNoticeSize" :jenkins-receiver-options="jenkinsReceiverOptions"/>
+        <jenkins-notification @noticeSize="getNoticeSize" :jenkins-receiver-options="jenkinsReceiverOptions"
+                              :receive-type-options="receiveTypeOptions"/>
       </el-collapse-item>
     </el-collapse>
   </div>
@@ -82,6 +95,13 @@ import PerformanceReportNotification
   from "@/business/components/settings/organization/components/performance/PerformanceReportNotification";
 import ApiHomeNotification from "@/business/components/settings/organization/components/api/ApiHomeNotification";
 
+let taskData = {
+  jenkins: [],
+  api: [],
+  performance: [],
+  track: [],
+};
+
 export default {
   name: "TaskNotification",
   components: {
@@ -112,6 +132,13 @@ export default {
       reviewReceiverOptions: [],
       //缺陷
       defectReceiverOptions: [],
+      receiveTypeOptions: [
+        {value: 'IN_SITE', label: this.$t('organization.message.in_site')},
+        {value: 'EMAIL', label: this.$t('organization.message.mail')},
+        {value: 'NAIL_ROBOT', label: this.$t('organization.message.nail_robot')},
+        {value: 'WECHAT_ROBOT', label: this.$t('organization.message.enterprise_wechat_robot')},
+        {value: 'LARK', label: this.$t('organization.message.lark')}
+      ],
       result: {}
     };
   },
@@ -143,18 +170,26 @@ export default {
       });
     },
     getNoticeSize(config) {
-      switch (config.taskType) {
+      switch (config.module) {
         case 'jenkins':
-          this.jenkinsNoticeSize += config.size;
+          taskData.jenkins = taskData.jenkins.filter(t => t.taskType !== config.taskType);
+          taskData.jenkins = taskData.jenkins.concat(config.data);
+          this.jenkinsNoticeSize = taskData.jenkins.length;
           break;
         case 'performance':
-          this.performanceNoticeSize += config.size;
+          taskData.performance = taskData.performance.filter(t => t.taskType !== config.taskType);
+          taskData.performance = taskData.performance.concat(config.data);
+          this.performanceNoticeSize = taskData.performance.length;
           break;
         case 'api':
-          this.apiNoticeSize += config.size;
+          taskData.api = taskData.api.filter(t => t.taskType !== config.taskType);
+          taskData.api = taskData.api.concat(config.data);
+          this.apiNoticeSize = taskData.api.length;
           break;
         case 'track':
-          this.trackNoticeSize += config.size;
+          taskData.track = taskData.track.filter(t => t.taskType !== config.taskType);
+          taskData.track = taskData.track.concat(config.data);
+          this.trackNoticeSize = taskData.track.length;
           break;
         default:
           break;
