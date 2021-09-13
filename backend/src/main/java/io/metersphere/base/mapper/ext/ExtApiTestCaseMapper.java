@@ -51,5 +51,5 @@ public interface ExtApiTestCaseMapper {
     List<String> selectNameByIdIn(@Param("ids")List<String> ids);
     String selectNameById(String id);
 
-    List<String> selectIdsByQuery(BaseQueryRequest query);
+    List<String> selectIdsByQuery(@Param("request")BaseQueryRequest request);
 }

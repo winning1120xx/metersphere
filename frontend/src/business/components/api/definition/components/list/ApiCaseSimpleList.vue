@@ -480,7 +480,10 @@ export default {
     runBatch(environment) {
       this.condition.environmentId = environment.id;
       this.condition.ids = this.$refs.caseTable.selectIds;
-      this.$post('/api/testcase/batch/run', this.condition, () => {
+      let obj = {};
+      Object.assign(obj, this.condition);
+      obj.condition = this.condition;
+      this.$post('/api/testcase/batch/run', obj, () => {
         this.condition.ids = [];
         this.$refs.batchRun.close();
         this.search();
@@ -572,7 +575,7 @@ export default {
           if (isNext) {
             setTimeout(() => {
               this.initTable();
-            }, 5000);
+            }, 10000);
           }
         });
       }
